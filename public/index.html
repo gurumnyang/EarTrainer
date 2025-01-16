@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hearing Training App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <h1 class="text-center mb-4">Hearing Training Application</h1>
+    
+    <!-- Upload Section -->
+    <section class="mb-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">Upload Audio File</h2>
+          <form id="uploadForm" class="row g-3">
+            <div class="col-md-8">
+              <input type="file" class="form-control" name="audio" id="audioFile" accept="audio/*" required>
+            </div>
+            <div class="col-md-4">
+              <button type="submit" class="btn btn-primary w-100">Upload</button>
+            </div>
+          </form>
+          <p id="uploadMessage" class="mt-3 text-success"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Process Section -->
+    <section class="mb-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">Process Audio</h2>
+          <form id="processForm" class="row g-3">
+            <div class="col-md-6">
+              <label for="noiseLevel" class="form-label">Noise Level:</label>
+              <input type="number" class="form-control" id="noiseLevel" name="noiseLevel" step="0.1" min="0" max="1" value="0.1">
+            </div>
+            <div class="col-md-6">
+              <label for="volumeAdjustment" class="form-label">Volume Adjustment:</label>
+              <input type="number" class="form-control" id="volumeAdjustment" name="volumeAdjustment" step="0.1" min="0" value="1.0">
+            </div>
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-success w-100">Process</button>
+            </div>
+          </form>
+          <p id="processMessage" class="mt-3 text-success"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Waveform Visualization -->
+    <section class="mb-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">Waveform Visualization</h2>
+          <div id="waveformContainer" class="bg-dark text-white p-3 rounded">Waveform will be displayed here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress Section -->
+    <section>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">Progress</h2>
+          <div id="progress" class="text-muted">Fetching progress...</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const processForm = document.getElementById('processForm');
+    const uploadMessage = document.getElementById('uploadMessage');
+    const processMessage = document.getElementById('processMessage');
+    const waveformContainer = document.getElementById('waveformContainer');
+    const progress = document.getElementById('progress');
+
+    let uploadedFileId = null;
+
+    // Upload file
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      const fileInput = document.getElementById('audioFile');
+      formData.append('audio', fileInput.files[0]);
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        uploadMessage.textContent = data.message;
+        uploadedFileId = data.fileId;
+      } catch (err) {
+        uploadMessage.textContent = 'Error uploading file.';
+        console.error(err);
+      }
+    });
+
+    // Process audio
+    processForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const noiseLevel = document.getElementById('noiseLevel').value;
+      const volumeAdjustment = document.getElementById('volumeAdjustment').value;
+
+      if (!uploadedFileId) {
+        processMessage.textContent = 'Please upload a file first.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/process', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fileId: uploadedFileId, noiseLevel, volumeAdjustment }),
+        });
+        const data = await response.json();
+        processMessage.textContent = data.message;
+
+        // Display waveform or processed audio (use WaveSurfer.js or similar for visualization)
+        waveformContainer.textContent = `Processed file saved at: ${data.processedPath}`;
+      } catch (err) {
+        processMessage.textContent = 'Error processing audio.';
+        console.error(err);
+      }
+    });
+
+    // Fetch progress (example user ID is hardcoded)
+    async function fetchProgress() {
+      try {
+        const response = await fetch('/progress/exampleUserId');
+        const data = await response.json();
+        progress.textContent = `Levels Completed: ${data.levelsCompleted}, Accuracy: ${data.accuracy}`;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    fetchProgress();
+  </script>
+</body>
+</html>
