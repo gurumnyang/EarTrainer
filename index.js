@@ -56,8 +56,7 @@ app.post('/process', (req, res) => {
   ffmpeg(inputPath)
   .outputOptions([
     '-filter_complex',
-    'anoisesrc=d=196.96:sample_rate=44100:channel_layout=stereo[noise];[0:a][noise]amix=inputs=2:duration=shortest',
-    '-report'
+    'anoisesrc=d=196.96:sample_rate=44100[noise];[0:a][noise]amix=inputs=2:duration=shortest'
   ])
   .audioCodec('libmp3lame') // MP3 코덱 설정
   .audioBitrate(192) // 비트레이트 192 kbps
@@ -75,6 +74,7 @@ app.post('/process', (req, res) => {
     res.status(500).send('Error processing audio.');
   })
   .save(outputPath);
+  
 });
 
 // Route: Visualize audio waveform
